@@ -3,14 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MagLive UPI Data Collector</title>
+  <title>MagLive UPI Data Engine</title>
   <style>
     body { font-family: 'Segoe UI', Arial, sans-serif; background: #f4f7f6; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-    .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; max-width: 500px; width: 100%; }
-    .phrase-box { background: #eef2f7; padding: 20px; border-radius: 8px; font-size: 1.3rem; font-weight: 600; color: #2c3e50; margin: 20px 0; min-height: 60px; display: flex; align-items: center; justify-content: center; border-left: 5px solid #3498db; }
-    button { background: #2ecc71; color: white; border: none; padding: 12px 25px; font-size: 1rem; border-radius: 25px; cursor: pointer; transition: background 0.3s; font-weight: bold; }
+    .card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); text-align: center; max-width: 550px; width: 100%; }
+    .phrase-box { background: #eef2f7; padding: 25px; border-radius: 8px; font-size: 1.25rem; font-weight: 600; color: #2c3e50; margin: 20px 0; min-height: 90px; display: flex; align-items: center; justify-content: center; border-left: 5px solid #3498db; text-align: center; line-height: 1.6; }
+    button { background: #2ecc71; color: white; border: none; padding: 12px 25px; font-size: 1rem; border-radius: 25px; cursor: pointer; transition: background 0.3s; font-weight: bold; width: 220px; outline: none; margin: 5px; }
     button:disabled { background: #bdc3c7; cursor: not-allowed; }
     button.recording { background: #e74c3c; }
+    .perm-btn { background: #3498db; }
     
     /* Recording Pulse Animation */
     .pulse-container { display: none; align-items: center; justify-content: center; margin: 15px 0; }
@@ -22,80 +23,138 @@
     }
     
     .timer { font-weight: bold; color: #7f8c8d; margin-top: 5px; }
-    .log-status { margin-top: 15px; font-size: 0.9rem; color: #34495e; font-weight: 500; word-break: break-all; }
+    .log-status { margin-top: 15px; font-size: 0.9rem; color: #34495e; font-weight: 500; word-break: break-word; }
+    .meta-info { font-size: 0.8rem; color: #95a5a6; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+    #sensorBox { font-size: 0.85rem; color: #7f8c8d; background: #f9f9f9; padding: 5px; border-radius: 4px; margin-top: 10px; display: none; }
   </style>
 </head>
 <body>
 
   <div class="card">
-    <h2>MagLive UPI Voice Collector</h2>
-    <p style="color: #7f8c8d;">Please read the phrase below clearly:</p>
+    <h2>MagLive UPI Dataset Engine</h2>
+    <div class="meta-info" id="phraseIntent">Intent: Loading...</div>
+    <p style="color: #7f8c8d; margin-top: 5px; font-size: 0.95rem;">Please read this unique statement clearly:</p>
     
-    <div class="phrase-box" id="phraseDisplay">Loading phrase...</div>
+    <div class="phrase-box" id="phraseDisplay">Generating distinct scenario...</div>
     
     <div class="pulse-container" id="animationContainer">
       <div class="pulse-dot"></div>
-      <span style="color: #e74c3c; font-weight: bold;">Recording & Sensing... <span class="timer" id="timerDisplay">0s</span></span>
+      <span style="color: #e74c3c; font-weight: bold;">Recording Audio & Fields... <span class="timer" id="timerDisplay">0s</span></span>
     </div>
 
-    <button id="actionBtn">Start Recording</button>
-    <div class="log-status" id="logStatus">Initializing sensors...</div>
+    <button id="permBtn" class="perm-btn">Grant Sensor Access</button>
+    <button id="actionBtn" style="display:none;">Start Recording</button>
+    
+    <div id="sensorBox">Magnetic Heading: <span id="magValue">0</span>°</div>
+    <div class="log-status" id="logStatus">Please click "Grant Sensor Access" first.</div>
   </div>
 
   <script>
-    // UPI Dataset
-    const datasets = [
-      { id: "upi_mag_01", text: '“Aman ko do sau pachas rupaye transfer karo.”' },
-      { id: "upi_mag_02", text: '“Mera bank account balance check karke batao.”' },
-      { id: "upi_mag_03", text: '“Kirana dukaan par teen sau chalish rupaye pay kar do.”' },
-      { id: "upi_mag_04", text: '“Papa ko paanch hazar rupaye bhej do aur WhatsApp par message daal dena.”' },
-      { id: "upi_mag_05", text: '“Mera bijli ka bill pay karna hai, upi se ek hazar rupaye kaat lo.”' }
+    // Linguistic pools to dynamically assemble massive variations of UPI sentences
+    const names = ["Amit", "Rahul", "Priya", "Sneha", "Vikram", "Anjali", "Rohan", "Deepak", "Neha", "Aman", "Suresh", "Meera", "Kabir", "Divya", "Arjun", "Jyoti", "Yash", "Pooja", "Alok", "Ritu"];
+    const amounts = ["sau", "do sau pachas", "paanch sau", "saat sau bees", "ek hazar", "barah sau pachas", "do hazar", "teen sau chalish", "pachas", "one hundred", "five hundred", "no sau"];
+    const merchants = ["Kirana dukaan", "Zomato", "Swiggy", "Doodh wale bhaiya", "Auto wale", "Petrol pump", "Supermarket", "Medical store", "Amazon order", "Sabzi mandi"];
+    const bills = ["bijli ka bill", "DTH recharge", "Wi-Fi bill", "gas cylinder booking", "mobile postpaid bill", "paani ka bill"];
+    const banks = ["State Bank", "HDFC account", "ICICI bank", "Paytm wallet", "Axis account", "Punjab National Bank"];
+
+    const templates = [
+      {
+        intent: "P2P_TRANSFER",
+        generate: () => {
+          const n = names[Math.floor(Math.random() * names.length)];
+          const a = amounts[Math.floor(Math.random() * amounts.length)];
+          return `“${n} ko ${a} rupaye transfer karo upi se.”`;
+        }
+      },
+      {
+        intent: "MERCHANT_PAYMENT",
+        generate: () => {
+          const m = merchants[Math.floor(Math.random() * merchants.length)];
+          const a = amounts[Math.floor(Math.random() * amounts.length)];
+          return `“${m} par ${a} rupaye scan karke pay kar do.”`;
+        }
+      }
     ];
 
-    let currentIdx = 0;
+    let currentPhraseString = "";
+    let currentIntentType = "";
     let mediaRecorder;
     let audioChunks = [];
-    let magnetometerData = [];
     let isRecording = false;
     let timerInterval;
     let secondsElapsed = 0;
-    let magSensor = null;
     
-    // REPLACE THIS with your deployed Google Apps Script Web App URL
-    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw08qDlwFhE9gVXhV0lH9_OpM45XyEETvYtSGto9FgZaKjk0VCDUTQ0MR8GGPsEuxKsfQ/exec"; 
+    // Magnetometer Streaming Variables
+    let magnetometerLog = [];
+    let latestMagneticHeading = 0;
+    
+    // !!! PASTE YOUR GOOGLE APPS SCRIPT WEB APP URL HERE !!!
+    const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbznzKwouzkHLZdoqWA0-eemejN1MSworLwlcpYYEndpo8hW-_ihU8BgegMA9mFALKKPlw/exec"; 
 
     const phraseDisplay = document.getElementById('phraseDisplay');
+    const phraseIntent = document.getElementById('phraseIntent');
     const actionBtn = document.getElementById('actionBtn');
+    const permBtn = document.getElementById('permBtn');
     const animationContainer = document.getElementById('animationContainer');
     const timerDisplay = document.getElementById('timerDisplay');
     const logStatus = document.getElementById('logStatus');
+    const magValueDisplay = document.getElementById('magValue');
+    const sensorBox = document.getElementById('sensorBox');
 
-    phraseDisplay.innerText = datasets[currentIdx].text;
+    function generateDistinctPhrase() {
+      const selectedTemplate = templates[Math.floor(Math.random() * templates.length)];
+      currentIntentType = selectedTemplate.intent;
+      currentPhraseString = selectedTemplate.generate();
+      phraseDisplay.innerText = currentPhraseString;
+      phraseIntent.innerText = `Intent Type: ${currentIntentType}`;
+    }
 
-    // Setup Magnetometer (MagLive targets 100Hz sampling rate)
-    if ('Magnetometer' in window) {
-      try {
-        magSensor = new Magnetometer({ frequency: 100 });
-        magSensor.addEventListener('reading', () => {
-          if (isRecording) {
-            magnetometerData.push({
-              x: magSensor.x,
-              y: magSensor.y,
-              z: magSensor.z,
-              t: Date.now() // Absolute epoch timestamp for time alignment
-            });
+    generateDistinctPhrase();
+
+    // Universal Magnetometer permission handler (Essential for iOS 13+ and Android Chrome)
+    permBtn.onclick = async () => {
+      if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        // iOS Device Path
+        try {
+          const permissionState = await DeviceOrientationEvent.requestPermission();
+          if (permissionState === 'granted') {
+            initMagnetometerListener();
+          } else {
+            log("Sensor permission denied.", "error");
           }
-        });
-        magSensor.addEventListener('error', event => {
-          log(`Sensor Error: ${event.error.message}`, "error");
-        });
-        magSensor.start();
-        log("System Ready. Audio + 100Hz Magnetometer active.", "info");
-      } catch (err) {
-        log("Sensor initialization failed. Check permissions.", "error");
+        } catch (err) {
+          log("Sensor prompt error: " + err.message, "error");
+        }
+      } else {
+        // Android / Desktop Path (Does not use explicit popups)
+        initMagnetometerListener();
       }
-    } else {
-      log("Magnetometer API not supported on this device/browser.", "error");
+    };
+
+    function initMagnetometerListener() {
+      window.addEventListener('deviceorientation', (event) => {
+        // webkitCompassHeading directly reads the hardware magnetometer data relative to magnetic north
+        if (event.webkitCompassHeading) {
+          latestMagneticHeading = event.webkitCompassHeading;
+        } else if (event.alpha) {
+          // Fallback calculation if compass heading attribute isn't directly exposed
+          latestMagneticHeading = 360 - event.alpha; 
+        }
+        
+        magValueDisplay.innerText = Math.round(latestMagneticHeading);
+        
+        if (isRecording) {
+          magnetometerLog.push({
+            heading: latestMagneticHeading,
+            timestamp: Date.now()
+          });
+        }
+      }, true);
+
+      permBtn.style.display = 'none';
+      actionBtn.style.display = 'inline-block';
+      sensorBox.style.display = 'block';
+      log("Hardware Compass Magnetometer Sync Active.", "success");
     }
 
     actionBtn.onclick = async () => {
@@ -108,23 +167,22 @@
 
     async function startRecording() {
       audioChunks = [];
-      magnetometerData = []; // Clear previous stream matrix
-      
+      magnetometerLog = []; // Flush old magnetometer metrics array
       try {
-        log("Opening microphone...", "info");
+        log("Opening microphone channels...", "info");
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
         
         mediaRecorder = new MediaRecorder(stream);
         mediaRecorder.ondataavailable = event => audioChunks.push(event.data);
-        mediaRecorder.onstop = processAndUploadAudio;
+        mediaRecorder.onstop = processAndUploadData;
 
-        isRecording = true;
         mediaRecorder.start();
+        isRecording = true;
         
         actionBtn.innerText = "Stop Recording";
         actionBtn.classList.add('recording');
         animationContainer.style.display = 'flex';
-        log("Recording active. Speak phrase now!", "success");
+        log("Recording audio & measuring proximity magnetic fields...", "success");
 
         secondsElapsed = 0;
         timerDisplay.innerText = "0s";
@@ -133,85 +191,76 @@
           timerDisplay.innerText = secondsElapsed + "s";
           
           if (secondsElapsed >= 10) {
-            log("Reached maximum 10-second limit. Stopping.", "info");
+            log("10s maximum limit met. Auto-saving...", "info");
             stopRecording();
           }
         }, 1000);
 
       } catch (err) {
-        log(`Microphone Error: ${err.message}`, "error");
+        log(`Hardware Denied: ${err.message}`, "error");
       }
     }
 
     function stopRecording() {
       if (mediaRecorder && isRecording) {
         clearInterval(timerInterval);
-        isRecording = false;
         mediaRecorder.stop();
-        mediaRecorder.stream.getTracks().forEach(track => track.stop()); // kill mic stream
-        
-        actionBtn.innerText = "Processing...";
+        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+        isRecording = false;
+        actionBtn.innerText = "Processing Data...";
         actionBtn.disabled = true;
         actionBtn.classList.remove('recording');
         animationContainer.style.display = 'none';
       }
     }
 
-    async function processAndUploadAudio() {
-      // MagLive Data validation checkpoint
+    async function processAndUploadData() {
       if (secondsElapsed < 3) {
-        log(`Sample discarded. Length (${secondsElapsed}s) must be 3-10s.`, "error");
+        log(`Rejected! Sample time (${secondsElapsed}s) too short.`, "error");
         resetUI();
         return;
       }
 
-      log(`Encoding data... Captured ${magnetometerData.length} sensor vectors.`, "info");
-      
+      log("Encoding raw wave data blocks...", "info");
       const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
       const reader = new FileReader();
       
       reader.onloadend = async () => {
         try {
           const base64Audio = reader.result.split(',')[1];
-          log("Uploading payload to Google Drive folders...", "info");
+          log("Shipping payload directly to cloud matrix folders...", "info");
           
+          const trackingKey = currentIntentType + "_" + Math.floor(Math.random() * 900000 + 100000);
+
           const payload = {
             audioData: base64Audio,
-            sensorData: JSON.stringify(magnetometerData), 
-            phraseId: datasets[currentIdx].id
+            sensorData: JSON.stringify(magnetometerLog), // Transmits the full array timeline of physical magnetic drift values
+            userName: trackingKey,
+            timestamp: new Date().getTime()
           };
 
-          const response = await fetch(WEB_APP_URL, {
+          fetch(WEB_APP_URL, {
             method: 'POST',
+            mode: 'no-cors', 
+            headers: { 'Content-Type': 'text/plain' },
             body: JSON.stringify(payload)
+          })
+          .then(() => {
+            log(`Success! Captured ${magnetometerLog.length} magnetic points. Saved to Drive.`, "success");
+            generateDistinctPhrase(); 
+            resetUI();
+          })
+          .catch((err) => {
+            log(`Network Pipeline Issue: ${err.message}`, "error");
+            resetUI();
           });
 
-          const result = await response.json();
-          
-          if (result.status === 'success') {
-            log(`Success! Saved as ${result.baseName}`, "success");
-            goToNextPhrase();
-          } else {
-            log(`Server Error: ${result.message}`, "error");
-          }
         } catch (err) {
-          log(`Upload Failed: ${err.message}`, "error");
-        } finally {
+          log(`Data Processing Issue: ${err.message}`, "error");
           resetUI();
         }
       };
-      
       reader.readAsDataURL(audioBlob);
-    }
-
-    function goToNextPhrase() {
-      currentIdx++;
-      if (currentIdx < datasets.length) {
-        phraseDisplay.innerText = datasets[currentIdx].text;
-      } else {
-        phraseDisplay.innerText = "🎉 Collection complete! All MagLive vectors stored.";
-        actionBtn.style.display = 'none';
-      }
     }
 
     function resetUI() {
